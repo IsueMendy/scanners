@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"reflect"
+	"strconv"
 )
 
 // StructScanner provides access to the fields of CSV-encoded
@@ -57,12 +58,34 @@ func (this *StructScanner) populate(type_ reflect.Type, value reflect.Value) {
 		}
 
 		field := value.Field(x)
-		if field.Kind() != reflect.String {
-			continue // Future: return err?
-		} else if !field.CanSet() {
-			continue // Future: return err?
+		if !field.CanSet() {
+			continue
 		}
-
-		field.SetString(this.Column(column))
+		switch field.Kind() {
+		case reflect.String:
+			field.SetString(this.Column(column))
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			integer, _ := strconv.ParseInt(this.Column(column), 10, 64)
+			field.SetInt(integer)
+		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+			integer, _ := strconv.ParseUint(this.Column(column), 10, 64)
+			field.SetUint(integer)
+		case reflect.Float32, reflect.Float64:
+			float, _ := strconv.ParseFloat(this.Column(column), 64)
+			field.SetFloat(float)
+		case reflect.Bool:
+			boolean, _ := strconv.ParseBool(this.Column(column))
+			field.SetBool(boolean)
+		default:
+			// Future: return err?
+			continue
+		}
 	}
+	// if field.Kind() != reflect.String {
+	// 	continue // Future: return err?
+	// } else if !field.CanSet() {
+	// 	continue // Future: return err?
+	// }
+
+	// field.SetString(this.Column(column))
 }
